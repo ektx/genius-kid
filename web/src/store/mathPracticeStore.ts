@@ -1,29 +1,29 @@
-import { defineStore } from 'pinia';
-import { generatePracticeQuestions } from '../utils/mathGenerator';
-import type { PracticeSettings, PracticeQuestion } from '../utils/mathGenerator';
-import { api } from '../utils/api';
-import { useAuthStore } from './authStore';
+import { defineStore } from 'pinia'
+import { generatePracticeQuestions } from '../utils/mathGenerator'
+import type { PracticeSettings, PracticeQuestion } from '../utils/mathGenerator'
+import { api } from '../utils/api'
+import { useAuthStore } from './authStore'
 
 export interface PracticeRecord {
-  id: string;
-  date: string;
-  duration: string; // HH:MM:SS.ms
-  accuracy: number;
-  settings: PracticeSettings;
-  score: number;
-  synced?: boolean;
+  id: string
+  date: string
+  duration: string // HH:MM:SS.ms
+  accuracy: number
+  settings: PracticeSettings
+  score: number
+  synced?: boolean
 }
 
 interface MathPracticeState {
-  settings: PracticeSettings;
-  currentQuestions: PracticeQuestion[];
-  currentIndex: number;
-  userAnswers: (number | null)[];
-  startTime: number | null;
-  endTime: number | null;
-  history: PracticeRecord[];
-  status: 'settings' | 'practicing' | 'result';
-  isSyncing: boolean;
+  settings: PracticeSettings
+  currentQuestions: PracticeQuestion[]
+  currentIndex: number
+  userAnswers: (number | null)[]
+  startTime: number | null
+  endTime: number | null
+  history: PracticeRecord[]
+  status: 'settings' | 'practicing' | 'result'
+  isSyncing: boolean
 }
 
 export const useMathPracticeStore = defineStore('mathPractice', {
@@ -45,100 +45,128 @@ export const useMathPracticeStore = defineStore('mathPractice', {
   }),
 
   getters: {
-    currentQuestion: (state) => state.currentQuestions[state.currentIndex],
-    isFinished: (state) => state.currentIndex >= state.currentQuestions.length,
-    progress: (state) => ({
+    currentQuestion: state => state.currentQuestions[state.currentIndex],
+    isFinished: state => state.currentIndex >= state.currentQuestions.length,
+    progress: state => ({
       current: state.currentIndex + 1,
       total: state.currentQuestions.length,
       remaining: state.currentQuestions.length - state.currentIndex - 1
     }),
-    accuracy: (state) => {
-      if (state.currentQuestions.length === 0) return 0;
-      let correct = 0;
+    accuracy: state => {
+      if (state.currentQuestions.length === 0) return 0
+      let correct = 0
       state.userAnswers.forEach((ans, i) => {
-        if (ans === state.currentQuestions[i].answer) correct++;
-      });
-      return Math.round((correct / state.currentQuestions.length) * 100);
+        if (ans === state.currentQuestions[i].answer) correct++
+      })
+      return Math.round((correct / state.currentQuestions.length) * 100)
     }
   },
 
   actions: {
+    formatDuration(ms: number) {
+      const hours = Math.floor(ms / 3600000)
+      const minutes = Math.floor((ms % 3600000) / 60000)
+      const seconds = Math.floor((ms % 60000) / 1000)
+      const milliseconds = ms % 1000
+      return `${hours.toString().padStart(2, '0')}:${minutes
+        .toString()
+        .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds
+        .toString()
+        .padStart(3, '0')}`
+    },
+
+    resetToSettings() {
+      this.status = 'settings'
+      this.currentQuestions = []
+      this.currentIndex = 0
+      this.userAnswers = []
+      this.startTime = null
+      this.endTime = null
+    },
+
     startPractice() {
-      this.currentQuestions = generatePracticeQuestions(this.settings);
-      this.currentIndex = 0;
-      this.userAnswers = new Array(this.settings.count).fill(null);
-      this.startTime = Date.now();
-      this.endTime = null;
-      this.status = 'practicing';
+      this.currentQuestions = generatePracticeQuestions(this.settings)
+      this.currentIndex = 0
+      this.userAnswers = new Array(this.settings.count).fill(null)
+      this.startTime = Date.now()
+      this.endTime = null
+      this.status = 'practicing'
     },
 
     submitAnswer(answer: number) {
-      this.userAnswers[this.currentIndex] = answer;
+      this.userAnswers[this.currentIndex] = answer
       if (this.currentIndex < this.currentQuestions.length - 1) {
-        this.currentIndex++;
+        this.currentIndex++
       } else {
-        this.finishPractice();
+        this.finishPractice()
       }
     },
 
     finishPractice() {
-      this.endTime = Date.now();
-      this.status = 'result';
-      this.saveRecord();
+      this.endTime = Date.now()
+      this.status = 'result'
+      this.saveRecord()
     },
 
     async syncHistory() {
-      const authStore = useAuthStore();
-      if (!authStore.isAuthenticated) return;
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return
 
-      this.isSyncing = true;
+      this.isSyncing = true
       try {
         // 1. 获取远程记录
-        const res: any = await api.get('/math/practice');
+        const res: any = await api.get('/math/practice')
         if (res.success && res.data.rows) {
           const remoteRecords = res.data.rows.map((row: any) => ({
             ...row,
-            settings: typeof row.settings === 'string' ? JSON.parse(row.settings) : row.settings,
+            settings:
+              typeof row.settings === 'string'
+                ? JSON.parse(row.settings)
+                : row.settings,
             synced: true
-          }));
+          }))
 
           // 2. 合并：保留远程有的，加上本地未同步的
-          const localUnsynced = this.history.filter(r => !r.synced);
-          
+          const localUnsynced = this.history.filter(r => !r.synced)
+
           // 避免重复同步：检查 ID
-          const remoteIds = new Set(remoteRecords.map((r: any) => r.id));
-          const filteredLocal = localUnsynced.filter(r => !remoteIds.has(r.id));
+          const remoteIds = new Set(remoteRecords.map((r: any) => r.id))
+          const filteredLocal = localUnsynced.filter(r => !remoteIds.has(r.id))
 
           // 3. 同步本地未同步的到远程
           for (const record of filteredLocal) {
             try {
-              await api.post('/math/practice', record);
-              record.synced = true;
+              await api.post('/math/practice', record)
+              record.synced = true
             } catch (err) {
-              console.warn(`Failed to sync record ${record.id}`, err);
+              console.warn(`Failed to sync record ${record.id}`, err)
             }
           }
 
           // 最终合并
-          this.history = [...remoteRecords, ...filteredLocal.filter(r => r.synced)];
-          this.saveToLocal();
+          this.history = [
+            ...remoteRecords,
+            ...filteredLocal.filter(r => r.synced)
+          ]
+          this.saveToLocal()
         }
       } catch (err) {
-        console.warn('Sync history failed, using local data:', err);
+        console.warn('Sync history failed, using local data:', err)
       } finally {
-        this.isSyncing = false;
+        this.isSyncing = false
       }
     },
 
     saveToLocal() {
-      localStorage.setItem('math-practice-history', JSON.stringify(this.history));
+      localStorage.setItem(
+        'math-practice-history',
+        JSON.stringify(this.history)
+      )
     },
 
     async saveRecord() {
-      const durationMs = this.endTime! - this.startTime!;
-      const minutes = Math.floor(durationMs / 60000);
-      const seconds = Math.floor((durationMs % 60000) / 1000);
-      const durationStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      const durationMs = this.endTime! - this.startTime!
+      const durationStr = this.formatDuration(durationMs)
 
       const newRecord: PracticeRecord = {
         id: Date.now().toString(),
@@ -148,22 +176,22 @@ export const useMathPracticeStore = defineStore('mathPractice', {
         settings: { ...this.settings },
         score: this.accuracy, // 简单以正确率为分
         synced: false
-      };
+      }
 
-      this.history.unshift(newRecord);
-      this.saveToLocal();
+      this.history.unshift(newRecord)
+      this.saveToLocal()
 
       // 尝试同步
-      const authStore = useAuthStore();
+      const authStore = useAuthStore()
       if (authStore.isAuthenticated) {
         try {
-          await api.post('/math/practice', newRecord);
-          newRecord.synced = true;
-          this.saveToLocal();
+          await api.post('/math/practice', newRecord)
+          newRecord.synced = true
+          this.saveToLocal()
         } catch (err) {
-          console.warn('Failed to sync new record, will retry later');
+          console.warn('Failed to sync new record, will retry later')
         }
       }
     }
   }
-});
+})

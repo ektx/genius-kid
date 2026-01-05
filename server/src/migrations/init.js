@@ -1,11 +1,11 @@
-import { dbUtils } from '../utils/db.js';
-import { fileURLToPath } from 'url';
+import { dbUtils } from '../utils/db.js'
+import { fileURLToPath } from 'url'
 
 async function migrate() {
-  console.log('Running migrations...');
-  
+  console.log('Running migrations...')
+
   try {
-    await dbUtils.beginTransaction();
+    await dbUtils.beginTransaction()
 
     // 用户表
     await dbUtils.run(`
@@ -18,7 +18,7 @@ async function migrate() {
         lock_until DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
-    `);
+    `)
 
     // 拼音练习记录
     await dbUtils.run(`
@@ -30,7 +30,7 @@ async function migrate() {
         date TEXT,
         FOREIGN KEY(user_id) REFERENCES users(id)
       )
-    `);
+    `)
 
     // 数学关卡进度
     await dbUtils.run(`
@@ -42,7 +42,7 @@ async function migrate() {
         PRIMARY KEY(user_id, level_id),
         FOREIGN KEY(user_id) REFERENCES users(id)
       )
-    `);
+    `)
 
     // 数学练习历史
     await dbUtils.run(`
@@ -55,21 +55,22 @@ async function migrate() {
         settings TEXT,
         FOREIGN KEY(user_id) REFERENCES users(id)
       )
-    `);
+    `)
 
-    await dbUtils.commit();
-    console.log('Migrations completed successfully.');
+    await dbUtils.commit()
+    console.log('Migrations completed successfully.')
   } catch (err) {
-    await dbUtils.rollback();
-    console.error('Migration failed:', err.message);
-    process.exit(1);
+    await dbUtils.rollback()
+    console.error('Migration failed:', err.message)
+    process.exit(1)
   }
 }
 
 // 在 ES 模块中判断是否为直接运行
-const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+const isMain = process.argv[1] === fileURLToPath(import.meta.url)
+debugger
 if (isMain) {
-  migrate();
+  migrate()
 }
 
-export default migrate;
+export default migrate
