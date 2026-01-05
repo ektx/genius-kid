@@ -8,6 +8,7 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import mathRoutes from './src/routes/mathRoutes.js';
 import authRoutes from './src/routes/authRoutes.js';
+import pinyinRoutes from './src/routes/pinyinRoutes.js';
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.get('/health', (req, res) => {
 // 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/math', mathRoutes);
+app.use('/api/pinyin', pinyinRoutes);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { generatePracticeQuestions } from '../utils/mathGenerator';
 import type { PracticeSettings, PracticeQuestion } from '../utils/mathGenerator';
 import { api } from '../utils/api';
+import { useAuthStore } from './authStore';
 
 export interface PracticeRecord {
   id: string;
@@ -10,6 +11,7 @@ export interface PracticeRecord {
   accuracy: number;
   settings: PracticeSettings;
   score: number;
+  synced?: boolean;
 }
 
 interface MathPracticeState {
@@ -21,6 +23,7 @@ interface MathPracticeState {
   endTime: number | null;
   history: PracticeRecord[];
   status: 'settings' | 'practicing' | 'result';
+  isSyncing: boolean;
 }
 
 export const useMathPracticeStore = defineStore('mathPractice', {
@@ -37,7 +40,8 @@ export const useMathPracticeStore = defineStore('mathPractice', {
     startTime: null,
     endTime: null,
     history: JSON.parse(localStorage.getItem('math-practice-history') || '[]'),
-    status: 'settings'
+    status: 'settings',
+    isSyncing: false
   }),
 
   getters: {
@@ -84,58 +88,82 @@ export const useMathPracticeStore = defineStore('mathPractice', {
     },
 
     async syncHistory() {
+      const authStore = useAuthStore();
+      if (!authStore.isAuthenticated) return;
+
+      this.isSyncing = true;
       try {
-        const res = await api.get('/math/practice');
+        // 1. 获取远程记录
+        const res: any = await api.get('/math/practice');
         if (res.success && res.data.rows) {
-          this.history = res.data.rows.map((row: any) => ({
+          const remoteRecords = res.data.rows.map((row: any) => ({
             ...row,
-            settings: typeof row.settings === 'string' ? JSON.parse(row.settings) : row.settings
+            settings: typeof row.settings === 'string' ? JSON.parse(row.settings) : row.settings,
+            synced: true
           }));
+
+          // 2. 合并：保留远程有的，加上本地未同步的
+          const localUnsynced = this.history.filter(r => !r.synced);
+          
+          // 避免重复同步：检查 ID
+          const remoteIds = new Set(remoteRecords.map((r: any) => r.id));
+          const filteredLocal = localUnsynced.filter(r => !remoteIds.has(r.id));
+
+          // 3. 同步本地未同步的到远程
+          for (const record of filteredLocal) {
+            try {
+              await api.post('/math/practice', record);
+              record.synced = true;
+            } catch (err) {
+              console.warn(`Failed to sync record ${record.id}`, err);
+            }
+          }
+
+          // 最终合并
+          this.history = [...remoteRecords, ...filteredLocal.filter(r => r.synced)];
+          this.saveToLocal();
         }
       } catch (err) {
-        console.warn('Failed to sync history, using local data:', err);
+        console.warn('Sync history failed, using local data:', err);
+      } finally {
+        this.isSyncing = false;
       }
+    },
+
+    saveToLocal() {
+      localStorage.setItem('math-practice-history', JSON.stringify(this.history));
     },
 
     async saveRecord() {
-      if (!this.startTime || !this.endTime) return;
-      
-      const durationMs = this.endTime - this.startTime;
-      const record: PracticeRecord = {
-        id: `rec-${Date.now()}`,
-        date: new Date().toLocaleString(),
-        duration: this.formatDuration(durationMs),
+      const durationMs = this.endTime! - this.startTime!;
+      const minutes = Math.floor(durationMs / 60000);
+      const seconds = Math.floor((durationMs % 60000) / 1000);
+      const durationStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+      const newRecord: PracticeRecord = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        duration: durationStr,
         accuracy: this.accuracy,
         settings: { ...this.settings },
-        score: this.accuracy // Simplified score
+        score: this.accuracy, // 简单以正确率为分
+        synced: false
       };
 
-      // 保存到本地
-      this.history.unshift(record);
-      if (this.history.length > 50) this.history.pop();
-      localStorage.setItem('math-practice-history', JSON.stringify(this.history));
+      this.history.unshift(newRecord);
+      this.saveToLocal();
 
-      // 同步到后端
-      try {
-        await api.post('/math/practice', record);
-      } catch (err) {
-        console.error('Failed to save record to server:', err);
+      // 尝试同步
+      const authStore = useAuthStore();
+      if (authStore.isAuthenticated) {
+        try {
+          await api.post('/math/practice', newRecord);
+          newRecord.synced = true;
+          this.saveToLocal();
+        } catch (err) {
+          console.warn('Failed to sync new record, will retry later');
+        }
       }
-    },
-
-    formatDuration(ms: number): string {
-      const h = Math.floor(ms / 3600000);
-      const m = Math.floor((ms % 3600000) / 60000);
-      const s = Math.floor((ms % 60000) / 1000);
-      const milli = ms % 1000;
-      
-      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${milli.toString().padStart(3, '0')}`;
-    },
-
-    resetToSettings() {
-      this.status = 'settings';
-      this.currentIndex = 0;
-      this.userAnswers = [];
     }
   }
 });

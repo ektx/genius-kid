@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { mathLevels } from '../data/mathData';
 import type { MathLevel, MathQuestion } from '../data/mathData';
 import { api } from '../utils/api';
+import { useAuthStore } from './authStore';
 
 interface MathState {
   currentLevelId: number;
@@ -10,6 +11,7 @@ interface MathState {
   totalAnswered: number;
   gameStatus: 'idle' | 'playing' | 'level-complete' | 'game-over';
   levelProgress: Record<number, { stars: number, unlocked: boolean }>;
+  isSyncing: boolean;
 }
 
 export const useMathStore = defineStore('math', {
@@ -19,26 +21,75 @@ export const useMathStore = defineStore('math', {
     correctCount: 0,
     totalAnswered: 0,
     gameStatus: 'idle',
-    levelProgress: { 1: { stars: 0, unlocked: true } }
+    levelProgress: JSON.parse(localStorage.getItem('math-progress') || '{ "1": { "stars": 0, "unlocked": true } }'),
+    isSyncing: false
   }),
+
+  getters: {
+    currentLevel: (state): MathLevel => {
+      return mathLevels.find(l => l.id === state.currentLevelId) || mathLevels[0];
+    },
+    isLastLevel: (state) => state.currentLevelId === mathLevels[mathLevels.length - 1].id
+  },
 
   actions: {
     // 从后端同步进度
     async syncProgress() {
+      const authStore = useAuthStore();
+      if (!authStore.isAuthenticated) return;
+
+      this.isSyncing = true;
       try {
-        const res = await api.get('/math/progress');
-        if (res.success && res.data.length > 0) {
-          const progress: Record<number, { stars: number, unlocked: boolean }> = {};
+        // 1. 先尝试获取远程进度
+        const res: any = await api.get('/math/progress');
+        if (res.success && res.data) {
+          const remoteProgress: Record<number, { stars: number, unlocked: boolean }> = {};
           res.data.forEach((item: any) => {
-            progress[item.level_id] = { stars: item.stars, unlocked: item.unlocked === 1 };
+            remoteProgress[item.level_id] = { stars: item.stars, unlocked: item.unlocked === 1 };
           });
-          this.levelProgress = progress;
+
+          // 2. 合并本地和远程进度（取最大星星数和解锁状态）
+          const mergedProgress = { ...this.levelProgress };
+          let hasChanges = false;
+
+          Object.keys(remoteProgress).forEach(id => {
+            const levelId = parseInt(id);
+            const remote = remoteProgress[levelId];
+            const local = mergedProgress[levelId];
+
+            if (!local || remote.stars > local.stars || remote.unlocked !== local.unlocked) {
+              mergedProgress[levelId] = {
+                stars: Math.max(remote.stars, local?.stars || 0),
+                unlocked: remote.unlocked || local?.unlocked || false
+              };
+              hasChanges = true;
+            }
+          });
+
+          // 3. 如果本地有更多进度，同步给远程
+          for (const id in this.levelProgress) {
+            const levelId = parseInt(id);
+            if (!remoteProgress[levelId] || this.levelProgress[levelId].stars > remoteProgress[levelId].stars) {
+              await api.post('/math/progress', { 
+                levelId, 
+                stars: this.levelProgress[levelId].stars, 
+                unlocked: this.levelProgress[levelId].unlocked 
+              });
+            }
+          }
+
+          this.levelProgress = mergedProgress;
+          this.saveToLocal();
         }
       } catch (err) {
-        console.warn('Failed to sync from server, using local data:', err);
-        const localData = localStorage.getItem('math-progress');
-        if (localData) this.levelProgress = JSON.parse(localData);
+        console.warn('Sync failed, using local data:', err);
+      } finally {
+        this.isSyncing = false;
       }
+    },
+
+    saveToLocal() {
+      localStorage.setItem('math-progress', JSON.stringify(this.levelProgress));
     },
 
     startLevel(levelId: number) {
@@ -58,7 +109,6 @@ export const useMathStore = defineStore('math', {
         this.score += 10;
       }
 
-      // 如果当前关卡题目全部答完
       if (this.totalAnswered >= this.currentLevel.questions.length) {
         this.completeLevel();
       }
@@ -78,12 +128,6 @@ export const useMathStore = defineStore('math', {
       // 更新本地状态
       if (!this.levelProgress[this.currentLevelId] || stars > this.levelProgress[this.currentLevelId].stars) {
         this.levelProgress[this.currentLevelId] = { stars, unlocked: true };
-        // 同步到后端
-        try {
-          await api.post('/math/progress', { levelId: this.currentLevelId, stars, unlocked: true });
-        } catch (err) {
-          console.error('Failed to save progress to server:', err);
-        }
       }
 
       // 解锁下一关
@@ -91,30 +135,31 @@ export const useMathStore = defineStore('math', {
         const nextId = this.currentLevelId + 1;
         if (!this.levelProgress[nextId]) {
           this.levelProgress[nextId] = { stars: 0, unlocked: true };
-          // 同步解锁到后端
-          try {
-            await api.post('/math/progress', { levelId: nextId, stars: 0, unlocked: true });
-          } catch (err) {
-            console.error('Failed to unlock next level on server:', err);
-          }
         }
       }
 
-      // 备份到 localStorage
-      localStorage.setItem('math-progress', JSON.stringify(this.levelProgress));
-    },
-
-    nextLevel() {
-      if (!this.isLastLevel) {
-        this.startLevel(this.currentLevelId + 1);
+      this.saveToLocal();
+      
+      // 尝试同步到后端
+      const authStore = useAuthStore();
+      if (authStore.isAuthenticated) {
+        try {
+          await api.post('/math/progress', { 
+            levelId: this.currentLevelId, 
+            stars, 
+            unlocked: true 
+          });
+          if (stars >= 1 && !this.isLastLevel) {
+            await api.post('/math/progress', { 
+              levelId: this.currentLevelId + 1, 
+              stars: 0, 
+              unlocked: true 
+            });
+          }
+        } catch (err) {
+          console.warn('Background sync failed, will retry later');
+        }
       }
     }
-  },
-
-  getters: {
-    currentLevel: (state): MathLevel => {
-      return mathLevels.find(l => l.id === state.currentLevelId) || mathLevels[0];
-    },
-    isLastLevel: (state) => state.currentLevelId === mathLevels.length
   }
 });

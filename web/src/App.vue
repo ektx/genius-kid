@@ -1,16 +1,24 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useAuthStore } from './store/authStore';
+import { syncManager } from './utils/syncManager';
 
 const authStore = useAuthStore();
 const deferredPrompt = ref<any>(null);
 const showInstallBtn = ref(false);
+const isOnline = ref(navigator.onLine);
 
 onMounted(async () => {
   // 检查登录状态
   if (authStore.token) {
     await authStore.fetchCurrentUser();
+    // 登录后触发同步
+    await syncManager.triggerAllSync();
   }
+
+  // 监听网络状态
+  window.addEventListener('online', () => isOnline.value = true);
+  window.addEventListener('offline', () => isOnline.value = false);
 
   // PWA 安装逻辑
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -39,6 +47,10 @@ const installPWA = async () => {
 
 <template>
   <div class="app-container">
+    <div v-if="!isOnline" class="offline-banner">
+      ⚠️ 当前处于离线状态，数据将保存在本地，上线后自动同步
+    </div>
+    
     <button v-if="showInstallBtn" class="install-pwa-btn" @click="installPWA">
       📥 安装应用到桌面
     </button>
@@ -62,6 +74,18 @@ const installPWA = async () => {
 .app-container {
   position: relative;
   min-height: 100vh;
+}
+
+.offline-banner {
+  background: #fef3c7;
+  color: #92400e;
+  text-align: center;
+  padding: 8px;
+  font-size: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+  border-bottom: 1px solid #fcd34d;
 }
 
 .install-pwa-btn {

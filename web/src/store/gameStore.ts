@@ -1,13 +1,17 @@
 import { defineStore } from 'pinia';
 import { getPinyinAudioText } from '../utils/pinyinAudio';
+import { api } from '../utils/api';
+import { useAuthStore } from './authStore';
 
 export type GameMode = 'pinyin-to-hanzi' | 'hanzi-to-pinyin' | 'pinyin-category';
 export type PinyinCategory = 'initial' | 'final' | 'overall' | 'all';
 
-interface ScoreRecord {
+export interface ScoreRecord {
+  id: string;
   score: number;
   date: string;
   mode: GameMode;
+  synced?: boolean;
 }
 
 /**
@@ -26,6 +30,7 @@ export const useGameStore = defineStore('game', {
     records: JSON.parse(localStorage.getItem('pinyin-records') || '[]') as ScoreRecord[],
     // 从本地存储初始化错题集
     wrongItems: JSON.parse(localStorage.getItem('pinyin-wrong') || '[]') as any[],
+    isSyncing: false
   }),
 
   getters: {
@@ -73,16 +78,70 @@ export const useGameStore = defineStore('game', {
     },
 
     // 游戏结束处理
-    endGame() {
+    async endGame() {
       this.isGameOver = true;
       const record: ScoreRecord = {
+        id: Date.now().toString(),
         score: this.score,
         date: new Date().toISOString(),
         mode: this.currentMode,
+        synced: false
       };
+      
       // 保存成绩到本地存储
       this.records.push(record);
+      this.saveToLocal();
+
+      // 尝试同步
+      const authStore = useAuthStore();
+      if (authStore.isAuthenticated) {
+        try {
+          await api.post('/pinyin/records', record);
+          record.synced = true;
+          this.saveToLocal();
+        } catch (err) {
+          console.warn('Failed to sync pinyin record');
+        }
+      }
+    },
+
+    // 从后端同步历史记录
+    async syncRecords() {
+      const authStore = useAuthStore();
+      if (!authStore.isAuthenticated) return;
+
+      this.isSyncing = true;
+      try {
+        const res: any = await api.get('/pinyin/records');
+        if (res.success && res.data) {
+          const remoteRecords = res.data.map((r: any) => ({ ...r, synced: true }));
+          
+          const localUnsynced = this.records.filter(r => !r.synced);
+          const remoteIds = new Set(remoteRecords.map((r: any) => r.id));
+          const filteredLocal = localUnsynced.filter(r => !remoteIds.has(r.id));
+
+          for (const record of filteredLocal) {
+            try {
+              await api.post('/pinyin/records', record);
+              record.synced = true;
+            } catch (err) {
+              console.warn(`Failed to sync record ${record.id}`);
+            }
+          }
+
+          this.records = [...remoteRecords, ...filteredLocal.filter(r => r.synced)];
+          this.saveToLocal();
+        }
+      } catch (err) {
+        console.warn('Sync pinyin records failed');
+      } finally {
+        this.isSyncing = false;
+      }
+    },
+
+    saveToLocal() {
       localStorage.setItem('pinyin-records', JSON.stringify(this.records));
+      localStorage.setItem('pinyin-wrong', JSON.stringify(this.wrongItems));
     },
 
     // 记录错题
@@ -92,51 +151,17 @@ export const useGameStore = defineStore('game', {
       );
       if (!exists) {
         this.wrongItems.push(item);
-        localStorage.setItem('pinyin-wrong', JSON.stringify(this.wrongItems));
+        this.saveToLocal();
       }
     },
 
     // TTS 语音合成功能
     speak(text: string) {
       if (!window.speechSynthesis) return;
-      
-      // 取消当前正在播放的语音
-      window.speechSynthesis.cancel();
-
-      // 清理文本
-      const cleanText = text ? text.trim() : '';
-      if (!cleanText) return;
-
-      // 如果是拼音（包含字母且不包含汉字），转换为对应的同音汉字以获取标准发音
-      const hasLetters = /[a-zA-Z]/.test(cleanText);
-      const hasChinese = /[\u4e00-\u9fa5]/.test(cleanText);
-      
-      let audioText = cleanText;
-      if (hasLetters && !hasChinese) {
-        audioText = getPinyinAudioText(cleanText);
-      }
-
-      console.log(`TTS Speaking: "${cleanText}" -> "${audioText}"`);
-
-      const utterance = new SpeechSynthesisUtterance(audioText);
+      const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'zh-CN';
-      utterance.rate = 0.8; // 稍微降低语速，让发音更清晰
-
-      // 强制选择中文语音（如果可用）
-      const loadVoicesAndSpeak = () => {
-        const voices = window.speechSynthesis.getVoices();
-        const chineseVoice = voices.find(v => v.lang.includes('zh') || v.name.includes('Chinese') || v.name.includes('Huihui') || v.name.includes('Xiaoxiao'));
-        if (chineseVoice) {
-          utterance.voice = chineseVoice;
-        }
-        window.speechSynthesis.speak(utterance);
-      };
-
-      if (window.speechSynthesis.getVoices().length === 0) {
-        window.speechSynthesis.onvoiceschanged = loadVoicesAndSpeak;
-      } else {
-        loadVoicesAndSpeak();
-      }
+      utterance.rate = 0.8;
+      window.speechSynthesis.speak(utterance);
     }
   }
 });

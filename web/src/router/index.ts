@@ -16,7 +16,7 @@ const router = createRouter({
     { 
       path: '/', 
       component: HomeView,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: false }
     },
     { 
       path: '/login', 
@@ -31,14 +31,14 @@ const router = createRouter({
     { 
       path: '/pinyin', 
       component: () => import('../views/pinyin/PinYinView.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: false }
     },
-    { path: '/game', component: GameView, meta: { requiresAuth: true } },
-    { path: '/stats', component: StatsView, meta: { requiresAuth: true } },
-    { path: '/wrong', component: WrongItemsView, meta: { requiresAuth: true } },
-    { path: '/math', component: MathHomeView, meta: { requiresAuth: true } },
-    { path: '/math/game', component: MathGameView, meta: { requiresAuth: true } },
-    { path: '/math/practice', component: MathPracticeView, meta: { requiresAuth: true } },
+    { path: '/game', component: GameView, meta: { requiresAuth: false } },
+    { path: '/stats', component: StatsView, meta: { requiresAuth: false } },
+    { path: '/wrong', component: WrongItemsView, meta: { requiresAuth: false } },
+    { path: '/math', component: MathHomeView, meta: { requiresAuth: false } },
+    { path: '/math/game', component: MathGameView, meta: { requiresAuth: false } },
+    { path: '/math/practice', component: MathPracticeView, meta: { requiresAuth: false } },
   ],
 });
 
@@ -46,7 +46,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   
-  // 如果页面需要认证且用户未登录
+  // 如果页面明确需要认证且用户未登录（目前全部改为可选，除了可能的个人中心）
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login');
   } 
