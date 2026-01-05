@@ -9,9 +9,22 @@ export interface PracticeRecord {
   date: string
   duration: string // HH:MM:SS.ms
   accuracy: number
+  total_questions?: number
+  wrong_count?: number
+  wrong_details?: WrongQuestion[]
   settings: PracticeSettings
   score: number
   synced?: boolean
+}
+
+export interface WrongQuestion {
+  questionId: string
+  expression: string
+  display: string
+  userAnswer: number
+  correctAnswer: number
+  errorCount: number
+  lastPracticedAt: string
 }
 
 interface MathPracticeState {
@@ -22,6 +35,7 @@ interface MathPracticeState {
   startTime: number | null
   endTime: number | null
   history: PracticeRecord[]
+  wrongQuestions: WrongQuestion[]
   status: 'settings' | 'practicing' | 'result'
   isSyncing: boolean
 }
@@ -40,6 +54,9 @@ export const useMathPracticeStore = defineStore('mathPractice', {
     startTime: null,
     endTime: null,
     history: JSON.parse(localStorage.getItem('math-practice-history') || '[]'),
+    wrongQuestions: JSON.parse(
+      localStorage.getItem('math-wrong-questions') || '[]'
+    ),
     status: 'settings',
     isSyncing: false
   }),
@@ -84,6 +101,47 @@ export const useMathPracticeStore = defineStore('mathPractice', {
       this.endTime = null
     },
 
+    recordWrongQuestion(question: PracticeQuestion, userAnswer: number) {
+      const existing = this.wrongQuestions.find(
+        q => q.display === question.display
+      )
+      if (existing) {
+        existing.errorCount++
+        existing.lastPracticedAt = new Date().toISOString()
+        existing.userAnswer = userAnswer
+      } else {
+        this.wrongQuestions.unshift({
+          questionId: question.id,
+          expression: question.expression,
+          display: question.display,
+          userAnswer: userAnswer,
+          correctAnswer: question.answer,
+          errorCount: 1,
+          lastPracticedAt: new Date().toISOString()
+        })
+      }
+      this.saveWrongQuestions()
+    },
+
+    saveWrongQuestions() {
+      localStorage.setItem(
+        'math-wrong-questions',
+        JSON.stringify(this.wrongQuestions)
+      )
+    },
+
+    removeWrongQuestion(display: string) {
+      this.wrongQuestions = this.wrongQuestions.filter(
+        q => q.display !== display
+      )
+      this.saveWrongQuestions()
+    },
+
+    clearWrongQuestions() {
+      this.wrongQuestions = []
+      this.saveWrongQuestions()
+    },
+
     startPractice() {
       this.currentQuestions = generatePracticeQuestions(this.settings)
       this.currentIndex = 0
@@ -123,6 +181,10 @@ export const useMathPracticeStore = defineStore('mathPractice', {
               typeof row.settings === 'string'
                 ? JSON.parse(row.settings)
                 : row.settings,
+            wrong_details:
+              typeof row.wrong_details === 'string'
+                ? JSON.parse(row.wrong_details)
+                : row.wrong_details,
             synced: true
           }))
 
@@ -168,11 +230,28 @@ export const useMathPracticeStore = defineStore('mathPractice', {
       const durationMs = this.endTime! - this.startTime!
       const durationStr = this.formatDuration(durationMs)
 
+      // Get wrong questions for this session
+      const currentWrongQuestions = this.currentQuestions
+        .map((q, i) => ({ q, ans: this.userAnswers[i] }))
+        .filter(item => item.ans !== null && item.ans !== item.q.answer)
+        .map(item => ({
+          questionId: item.q.id,
+          expression: item.q.expression,
+          display: item.q.display,
+          userAnswer: item.ans as number,
+          correctAnswer: item.q.answer,
+          errorCount: 1,
+          lastPracticedAt: new Date().toISOString()
+        }))
+
       const newRecord: PracticeRecord = {
         id: Date.now().toString(),
         date: new Date().toISOString(),
         duration: durationStr,
         accuracy: this.accuracy,
+        total_questions: this.currentQuestions.length,
+        wrong_count: currentWrongQuestions.length,
+        wrong_details: currentWrongQuestions,
         settings: { ...this.settings },
         score: this.accuracy, // 简单以正确率为分
         synced: false

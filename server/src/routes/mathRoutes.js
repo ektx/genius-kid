@@ -90,4 +90,18 @@ router.get('/progress', auth, mathController.getProgress);
  */
 router.post('/progress', auth, mathController.updateProgress);
 
+/**
+ * @swagger
+ * /api/math/analysis:
+ *   get:
+ *     summary: 获取数学练习错误分析数据
+ *     tags: [Math]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 成功返回分析数据
+ */
+router.get('/analysis', auth, mathController.getErrorAnalysis);
+
 export default router;

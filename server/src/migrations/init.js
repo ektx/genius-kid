@@ -52,6 +52,9 @@ async function migrate() {
         date TEXT,
         duration TEXT,
         accuracy INTEGER,
+        total_questions INTEGER DEFAULT 0,
+        wrong_count INTEGER DEFAULT 0,
+        wrong_details TEXT, -- JSON string of wrong questions
         settings TEXT,
         FOREIGN KEY(user_id) REFERENCES users(id)
       )

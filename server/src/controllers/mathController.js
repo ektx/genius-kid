@@ -38,6 +38,15 @@ const mathController = {
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });
     }
+  },
+
+  getErrorAnalysis: async (req, res) => {
+    try {
+      const data = await MathModel.getErrorAnalysis(req.user.id);
+      res.json({ success: true, data });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
   }
 };
 
