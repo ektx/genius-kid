@@ -12,7 +12,10 @@ async function migrate() {
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE,
         password TEXT NOT NULL,
+        login_attempts INTEGER DEFAULT 0,
+        lock_until DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);

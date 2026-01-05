@@ -7,6 +7,7 @@ import migrate from './src/migrations/init.js';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import mathRoutes from './src/routes/mathRoutes.js';
+import authRoutes from './src/routes/authRoutes.js';
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.get('/health', (req, res) => {
 });
 
 // 路由
+app.use('/api/auth', authRoutes);
 app.use('/api/math', mathRoutes);
 
 // 错误处理中间件

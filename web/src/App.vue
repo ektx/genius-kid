@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { useAuthStore } from './store/authStore';
 
+const authStore = useAuthStore();
 const deferredPrompt = ref<any>(null);
 const showInstallBtn = ref(false);
 
-onMounted(() => {
+onMounted(async () => {
+  // 检查登录状态
+  if (authStore.token) {
+    await authStore.fetchCurrentUser();
+  }
+
   // PWA 安装逻辑
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();

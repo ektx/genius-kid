@@ -1,23 +1,57 @@
 <template>
   <div class="home-container">
+    <div class="user-info" v-if="authStore.user">
+      <span>欢迎, {{ authStore.user.username }}!</span>
+      <button class="logout-btn" @click="handleLogout">退出登录</button>
+    </div>
     <h1 class="title">✨ Genius Kid ✨</h1>
     
    
     <div class="footer-btns">
       <button class="secondary-btn" @click="router.push('/pinyin')">✨ 拼音小达人</button>
       <button class="secondary-btn" @click="router.push('/math')">🧮 数学游戏</button>
-      <!-- <button class="secondary-btn" @click="router.push('/stats')">🏆 排行榜</button> -->
-      <!-- <button class="secondary-btn" @click="router.push('/wrong')">📖 错题集</button> -->
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../store/authStore'
 
 const router = useRouter()
+const authStore = useAuthStore()
+
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/login')
+}
 </script>
 <style scoped>
+.user-info {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.logout-btn {
+  padding: 4px 12px !important;
+  font-size: 0.8rem !important;
+  color: #ef4444 !important;
+  border-color: #fee2e2 !important;
+}
+
+.logout-btn:hover {
+  background: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+}
+
 .home-container {
   display: flex;
   flex-direction: column;
