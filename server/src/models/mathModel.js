@@ -1,4 +1,4 @@
-const { dbUtils } = require('../utils/db');
+import { dbUtils } from '../utils/db.js';
 
 const MathModel = {
   // 分页查询数学练习记录
@@ -44,4 +44,4 @@ const MathModel = {
   }
 };
 
-module.exports = MathModel;
+export default MathModel;

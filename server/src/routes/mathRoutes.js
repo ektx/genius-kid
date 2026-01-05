@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import mathController from '../controllers/mathController.js';
+import auth from '../middleware/auth.js';
+
 const router = express.Router();
-const mathController = require('../controllers/mathController');
-const auth = require('../middleware/auth');
 
 /**
  * @swagger
@@ -89,4 +90,4 @@ router.get('/progress', auth, mathController.getProgress);
  */
 router.post('/progress', auth, mathController.updateProgress);
 
-module.exports = router;
+export default router;

@@ -1,0 +1,4 @@
+onlyBuiltDependencies:
+  - '@scarf/scarf'
+  - sqlite3
+  - unrs-resolver

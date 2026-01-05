@@ -1,12 +1,12 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-const { db } = require('./src/utils/db');
-const migrate = require('./src/migrations/init');
-
-const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import { rateLimit } from 'express-rate-limit';
+import { db } from './src/utils/db.js';
+import migrate from './src/migrations/init.js';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
+import mathRoutes from './src/routes/mathRoutes.js';
 
 const app = express();
 
@@ -57,7 +57,7 @@ app.get('/health', (req, res) => {
 });
 
 // 路由
-app.use('/api/math', require('./src/routes/mathRoutes'));
+app.use('/api/math', mathRoutes);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
@@ -74,4 +74,4 @@ migrate().then(() => {
   });
 });
 
-module.exports = app; // 方便测试
+export default app; // 方便测试

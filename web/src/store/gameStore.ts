@@ -1,6 +1,4 @@
 import { defineStore } from 'pinia';
-import { commonHanzi } from '../data/hanziData';
-import { allPinyinData } from '../data/pinyinData';
 import { getPinyinAudioText } from '../utils/pinyinAudio';
 
 export type GameMode = 'pinyin-to-hanzi' | 'hanzi-to-pinyin' | 'pinyin-category';

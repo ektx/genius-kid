@@ -1,10 +1,16 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-require('dotenv').config();
+import sqlite3 from 'sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import 'dotenv/config';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const verboseSqlite3 = sqlite3.verbose();
 
 const dbPath = path.resolve(__dirname, '../../', process.env.DB_PATH || './data/database.sqlite');
 
-const db = new sqlite3.Database(dbPath, (err) => {
+const db = new verboseSqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Database connection error:', err.message);
   } else {
@@ -49,4 +55,4 @@ const dbUtils = {
   rollback: () => dbUtils.run('ROLLBACK')
 };
 
-module.exports = { db, dbUtils };
+export { db, dbUtils };

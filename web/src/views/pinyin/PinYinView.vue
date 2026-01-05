@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { useGameStore, GameMode, PinyinCategory } from '../store/gameStore';
+import { useGameStore } from '@src/store/gameStore';
+import type { GameMode, PinyinCategory } from '@src/store/gameStore';
 import { ref } from 'vue';
 
 const router = useRouter();
@@ -63,12 +64,6 @@ const startGame = () => {
       </div>
 
       <button class="start-btn" @click="startGame">开始挑战 🚀</button>
-    </div>
-
-    <div class="footer-btns">
-      <button class="math-btn" @click="router.push('/math')">🧮 数学游戏</button>
-      <button class="secondary-btn" @click="router.push('/stats')">🏆 排行榜</button>
-      <button class="secondary-btn" @click="router.push('/wrong')">📖 错题集</button>
     </div>
   </div>
 </template>
@@ -152,43 +147,8 @@ button.active {
 }
 
 .start-btn:hover {
+    color: #fff;
   background: #059669;
   transform: translateY(-2px);
-}
-
-.footer-btns {
-  display: flex;
-  gap: 15px;
-  margin-top: 40px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.secondary-btn, .math-btn {
-  background: white;
-  border: 2px solid #e2e8f0;
-  padding: 12px 24px;
-  border-radius: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: #64748b;
-}
-
-.math-btn {
-  border-color: #f59e0b;
-  color: #d97706;
-  background-color: #fffbeb;
-}
-
-.secondary-btn:hover, .math-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-@media (max-width: 600px) {
-  .title { font-size: 2rem; margin-bottom: 20px; }
-  .settings-card { padding: 20px; }
-  .btn-group button { padding: 8px 15px; font-size: 0.9rem; }
 }
 </style>

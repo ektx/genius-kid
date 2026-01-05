@@ -1,4 +1,4 @@
-const MathModel = require('../models/mathModel');
+import MathModel from '../models/mathModel.js';
 
 const mathController = {
   getPracticeRecords: async (req, res) => {
@@ -41,4 +41,4 @@ const mathController = {
   }
 };
 
-module.exports = mathController;
+export default mathController;

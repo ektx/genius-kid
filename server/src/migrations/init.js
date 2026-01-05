@@ -1,4 +1,5 @@
-const { dbUtils } = require('../utils/db');
+import { dbUtils } from '../utils/db.js';
+import { fileURLToPath } from 'url';
 
 async function migrate() {
   console.log('Running migrations...');
@@ -62,8 +63,10 @@ async function migrate() {
   }
 }
 
-if (require.main === module) {
+// 在 ES 模块中判断是否为直接运行
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+if (isMain) {
   migrate();
 }
 
-module.exports = migrate;
+export default migrate;
