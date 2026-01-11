@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/home/HomeView.vue'
 import GameView from '../modules/pinyin/GameView.vue'
 import StatsView from '../modules/pinyin/StatsView.vue'
@@ -13,7 +13,7 @@ import RegisterView from '../views/auth/RegisterView.vue'
 import { useAuthStore } from '../store/authStore'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_SOME_KEY_BASE_URL),
+  history: createWebHashHistory(import.meta.env.VITE_SOME_KEY_BASE_URL),
   routes: [
     {
       path: '/',
