@@ -30,23 +30,32 @@ export default defineConfig({
       devOptions: {
         enabled: true // 允许在开发模式下测试 PWA
       },
-      includeAssets: ['vite.svg'],
+      includeAssets: ['logo.png'],
       manifest: {
         name: '拼音数学小达人',
         short_name: '小达人',
         description: '儿童拼音打字与数学计算练习应用',
         theme_color: '#0ea5e9',
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
         icons: [
           {
-            src: 'logo.jpg',
+            src: 'logo.png',
             sizes: 'any',
-            type: 'image/jpg',
+            type: 'image/png',
             purpose: 'any'
+          },
+          {
+            src: 'logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}']
+        globPatterns: ['**/*.{js,css,html,ico,jpg,png,svg,wasm}']
       }
     })
   ]
