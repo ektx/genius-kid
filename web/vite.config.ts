@@ -38,16 +38,10 @@ export default defineConfig({
         theme_color: '#0ea5e9',
         icons: [
           {
-            src: 'vite.svg',
+            src: 'logo.jpg',
             sizes: 'any',
-            type: 'image/svg+xml',
+            type: 'image/jpg',
             purpose: 'any'
-          },
-          {
-            src: 'vite.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'maskable'
           }
         ]
       },
