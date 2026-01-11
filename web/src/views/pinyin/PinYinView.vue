@@ -1,65 +1,86 @@
-<script setup lang="ts">
-import { useRouter } from 'vue-router';
-import { useGameStore } from '@src/store/gameStore';
-import type { GameMode, PinyinCategory } from '@src/store/gameStore';
-import { ref } from 'vue';
-
-const router = useRouter();
-const gameStore = useGameStore();
-
-// 响应式状态：选中的模式、时长、拼音类别
-const selectedMode = ref<GameMode>('hanzi-to-pinyin');
-const selectedTime = ref(60);
-const selectedCategory = ref<PinyinCategory>('all');
-
-/**
- * 开始游戏：初始化 Store 状态并跳转到游戏界面
- */
-const startGame = () => {
-  gameStore.initGame(selectedMode.value, selectedTime.value, selectedCategory.value);
-  router.push('/game');
-};
-</script>
-
 <template>
   <div class="home-container">
-    <h1 class="title">✨ 拼音小达人 ✨</h1>
-    
+    <div class="header">
+      <button class="back-btn" @click="router.push('/')">🏠</button>
+      <h1 class="title">✨ 拼音小达人 ✨</h1>
+    </div>
+
     <div class="card settings-card">
       <div class="setting-group">
         <h3>🎮 选择模式</h3>
         <div class="btn-group">
-          <button 
-            :class="{ active: selectedMode === 'hanzi-to-pinyin' }" 
+          <button
+            :class="{ active: selectedMode === 'hanzi-to-pinyin' }"
             @click="selectedMode = 'hanzi-to-pinyin'"
-          >看汉字写拼音</button>
-          <button 
-            :class="{ active: selectedMode === 'pinyin-to-hanzi' }" 
+          >
+            看汉字写拼音
+          </button>
+          <button
+            :class="{ active: selectedMode === 'pinyin-to-hanzi' }"
             @click="selectedMode = 'pinyin-to-hanzi'"
-          >看拼音选汉字</button>
-          <button 
-            :class="{ active: selectedMode === 'pinyin-category' }" 
+          >
+            看拼音选汉字
+          </button>
+          <button
+            :class="{ active: selectedMode === 'pinyin-category' }"
             @click="selectedMode = 'pinyin-category'"
-          >拼音分类练习</button>
+          >
+            拼音分类练习
+          </button>
         </div>
       </div>
 
       <div class="setting-group" v-if="selectedMode === 'pinyin-category'">
         <h3>📚 拼音类别</h3>
         <div class="btn-group">
-          <button :class="{ active: selectedCategory === 'all' }" @click="selectedCategory = 'all'">全部</button>
-          <button :class="{ active: selectedCategory === 'initial' }" @click="selectedCategory = 'initial'">声母</button>
-          <button :class="{ active: selectedCategory === 'final' }" @click="selectedCategory = 'final'">韵母</button>
-          <button :class="{ active: selectedCategory === 'overall' }" @click="selectedCategory = 'overall'">整体认读</button>
+          <button
+            :class="{ active: selectedCategory === 'all' }"
+            @click="selectedCategory = 'all'"
+          >
+            全部
+          </button>
+          <button
+            :class="{ active: selectedCategory === 'initial' }"
+            @click="selectedCategory = 'initial'"
+          >
+            声母
+          </button>
+          <button
+            :class="{ active: selectedCategory === 'final' }"
+            @click="selectedCategory = 'final'"
+          >
+            韵母
+          </button>
+          <button
+            :class="{ active: selectedCategory === 'overall' }"
+            @click="selectedCategory = 'overall'"
+          >
+            整体认读
+          </button>
         </div>
       </div>
 
       <div class="setting-group">
         <h3>⏰ 时间限制</h3>
         <div class="btn-group">
-          <button :class="{ active: selectedTime === 30 }" @click="selectedTime = 30">30秒</button>
-          <button :class="{ active: selectedTime === 60 }" @click="selectedTime = 60">60秒</button>
-          <button :class="{ active: selectedTime === 90 }" @click="selectedTime = 90">90秒</button>
+          <button
+            :class="{ active: selectedTime === 30 }"
+            @click="selectedTime = 30"
+          >
+            30秒
+          </button>
+          <button
+            :class="{ active: selectedTime === 60 }"
+            @click="selectedTime = 60"
+          >
+            60秒
+          </button>
+          <button
+            :class="{ active: selectedTime === 90 }"
+            @click="selectedTime = 90"
+          >
+            90秒
+          </button>
         </div>
       </div>
 
@@ -67,6 +88,32 @@ const startGame = () => {
     </div>
   </div>
 </template>
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { useGameStore } from '@src/store/gameStore'
+import type { GameMode, PinyinCategory } from '@src/store/gameStore'
+import { ref } from 'vue'
+
+const router = useRouter()
+const gameStore = useGameStore()
+
+// 响应式状态：选中的模式、时长、拼音类别
+const selectedMode = ref<GameMode>('hanzi-to-pinyin')
+const selectedTime = ref(60)
+const selectedCategory = ref<PinyinCategory>('all')
+
+/**
+ * 开始游戏：初始化 Store 状态并跳转到游戏界面
+ */
+const startGame = () => {
+  gameStore.initGame(
+    selectedMode.value,
+    selectedTime.value,
+    selectedCategory.value
+  )
+  router.push('/game')
+}
+</script>
 
 <style scoped>
 .home-container {
@@ -76,13 +123,20 @@ const startGame = () => {
   padding: 40px 20px;
   background-color: #f0f9ff;
   min-height: 100vh;
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
 }
 
 .title {
   font-size: 3rem;
   color: #0ea5e9;
   margin-bottom: 40px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .settings-card {
@@ -147,7 +201,7 @@ button.active {
 }
 
 .start-btn:hover {
-    color: #fff;
+  color: #fff;
   background: #059669;
   transform: translateY(-2px);
 }

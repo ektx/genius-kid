@@ -6,12 +6,15 @@ import path from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
+  build: {
+    outDir: '../docs'
+  },
   server: {
     port: 5050,
     proxy: {
       '/api': {
         target: 'http://localhost:5100',
-        changeOrigin: true,
+        changeOrigin: true
       }
     }
   },
@@ -52,5 +55,5 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}']
       }
     })
-  ],
+  ]
 })
