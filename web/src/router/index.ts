@@ -13,7 +13,7 @@ import RegisterView from '../views/auth/RegisterView.vue'
 import { useAuthStore } from '../store/authStore'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
