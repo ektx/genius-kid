@@ -1,44 +1,47 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useMathPracticeStore } from '../../store/mathPracticeStore';
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMathPracticeStore } from '../../store/mathPracticeStore'
 
-const router = useRouter();
-const store = useMathPracticeStore();
+const router = useRouter()
+const store = useMathPracticeStore()
 
-const sortBy = ref<'count' | 'time'>('time');
+const sortBy = ref<'count' | 'time'>('time')
 
 const sortedWrongQuestions = computed(() => {
   return [...store.wrongQuestions].sort((a, b) => {
     if (sortBy.value === 'count') {
-      return b.errorCount - a.errorCount;
+      return b.errorCount - a.errorCount
     } else {
-      return new Date(b.lastPracticedAt).getTime() - new Date(a.lastPracticedAt).getTime();
+      return (
+        new Date(b.lastPracticedAt).getTime() -
+        new Date(a.lastPracticedAt).getTime()
+      )
     }
-  });
-});
+  })
+})
 
 const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
+  const date = new Date(dateStr)
   return date.toLocaleString('zh-CN', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
-  });
-};
+  })
+}
 
 const handleRemove = (display: string) => {
   if (confirm('确定要删除这道错题吗？')) {
-    store.removeWrongQuestion(display);
+    store.removeWrongQuestion(display)
   }
-};
+}
 
 const handleClear = () => {
   if (confirm('确定要清空所有错题记录吗？')) {
-    store.clearWrongQuestions();
+    store.clearWrongQuestions()
   }
-};
+}
 </script>
 
 <template>
@@ -46,36 +49,40 @@ const handleClear = () => {
     <div class="header">
       <button class="back-btn" @click="router.back()">⬅️</button>
       <h1 class="title">📖 错题本</h1>
-      <button class="clear-btn" @click="handleClear" v-if="store.wrongQuestions.length > 0">清空</button>
+      <!-- <button class="clear-btn" @click="handleClear" v-if="store.wrongQuestions.length > 0">清空</button> -->
     </div>
 
     <div class="controls" v-if="store.wrongQuestions.length > 0">
       <div class="sort-options">
         <span>排序方式:</span>
-        <button 
-          :class="{ active: sortBy === 'time' }" 
-          @click="sortBy = 'time'"
-        >最近时间</button>
-        <button 
-          :class="{ active: sortBy === 'count' }" 
+        <button :class="{ active: sortBy === 'time' }" @click="sortBy = 'time'">
+          最近时间
+        </button>
+        <button
+          :class="{ active: sortBy === 'count' }"
           @click="sortBy = 'count'"
-        >错误次数</button>
+        >
+          错误次数
+        </button>
       </div>
-      <div class="summary">
-        共 {{ store.wrongQuestions.length }} 道错题
-      </div>
+      <div class="summary">共 {{ store.wrongQuestions.length }} 道错题</div>
     </div>
 
-    <div v-if="store.wrongQuestions.length === 0" class="empty-state card animate-fade-in">
+    <div
+      v-if="store.wrongQuestions.length === 0"
+      class="empty-state card animate-fade-in"
+    >
       <div class="icon">🎉</div>
       <p>太棒了！目前没有错题记录。</p>
-      <button class="primary-btn" @click="router.push('/math/practice')">去练习</button>
+      <button class="primary-btn" @click="router.push('/math/practice')">
+        去练习
+      </button>
     </div>
 
     <div v-else class="questions-list">
-      <div 
-        v-for="q in sortedWrongQuestions" 
-        :key="q.display" 
+      <div
+        v-for="q in sortedWrongQuestions"
+        :key="q.display"
         class="question-card card animate-fade-in"
       >
         <div class="card-header">
@@ -318,7 +325,13 @@ const handleClear = () => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
