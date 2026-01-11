@@ -36,7 +36,7 @@ export default defineConfig({
         short_name: '小达人',
         description: '儿童拼音打字与数学计算练习应用',
         theme_color: '#0ea5e9',
-        start_url: '/',
+        start_url: '/genius-kid/',
         display: 'standalone',
         background_color: '#ffffff',
         icons: [
