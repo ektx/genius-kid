@@ -1,105 +1,3 @@
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useMathPracticeStore } from '../../store/mathPracticeStore'
-import type {
-  MathOp,
-  MathRange,
-  MathType,
-  QuestionCount
-} from '../../utils/mathGenerator'
-
-const router = useRouter()
-const store = useMathPracticeStore()
-
-const userInput = ref('')
-const timerDisplay = ref('00:00:00.000')
-const showHistory = ref(false)
-let timerInterval: number | null = null
-
-const startTimer = () => {
-  stopTimer() // 启动前先停止旧的计时器
-  const start = Date.now()
-  timerInterval = window.setInterval(() => {
-    const now = Date.now()
-    timerDisplay.value = store.formatDuration(now - start)
-  }, 10)
-}
-
-const stopTimer = () => {
-  if (timerInterval) {
-    clearInterval(timerInterval)
-    timerInterval = null
-  }
-}
-
-const handleStart = () => {
-  if (store.settings.operations.length === 0) {
-    alert('请至少选择一种运算类型！')
-    return
-  }
-  userInput.value = ''
-  timerDisplay.value = '00:00:00.000'
-  store.startPractice()
-  startTimer()
-}
-
-const handleKeypad = (num: string) => {
-  if (num === 'DEL') {
-    userInput.value = userInput.value.slice(0, -1)
-  } else if (userInput.value.length < 5) {
-    userInput.value += num
-  }
-}
-
-const submitAnswer = () => {
-  if (userInput.value === '') return
-  const answer = parseInt(userInput.value)
-  const currentQ = store.currentQuestion
-
-  if (currentQ && answer !== currentQ.answer) {
-    store.recordWrongQuestion(currentQ, answer)
-  }
-
-  store.submitAnswer(answer)
-  userInput.value = ''
-
-  if (store.status === 'result') {
-    stopTimer()
-  }
-}
-
-const handleKeyDown = (e: KeyboardEvent) => {
-  if (store.status !== 'practicing') return
-  if (e.key >= '0' && e.key <= '9') handleKeypad(e.key)
-  else if (e.key === 'Backspace') handleKeypad('DEL')
-  else if (e.key === 'Enter') submitAnswer()
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown)
-  // 确保每次进入页面都回到设置界面
-  store.resetToSettings()
-  store.syncHistory()
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown)
-  stopTimer()
-})
-
-const toggleOp = (op: MathOp) => {
-  const ops = [...store.settings.operations]
-  const index = ops.indexOf(op)
-  if (index > -1) {
-    if (ops.length > 1) ops.splice(index, 1)
-  } else {
-    ops.push(op)
-  }
-  store.settings.operations = ops
-}
-</script>
-
 <template>
   <div class="practice-container">
     <div class="header">
@@ -301,6 +199,108 @@ const toggleOp = (op: MathOp) => {
   </div>
 </template>
 
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMathPracticeStore } from '../../store/mathPracticeStore'
+import type {
+  MathOp,
+  MathRange,
+  MathType,
+  QuestionCount
+} from '../../utils/mathGenerator'
+
+const router = useRouter()
+const store = useMathPracticeStore()
+
+const userInput = ref('')
+const timerDisplay = ref('00:00:00.000')
+const showHistory = ref(false)
+let timerInterval: number | null = null
+
+const startTimer = () => {
+  stopTimer() // 启动前先停止旧的计时器
+  const start = Date.now()
+  timerInterval = window.setInterval(() => {
+    const now = Date.now()
+    timerDisplay.value = store.formatDuration(now - start)
+  }, 10)
+}
+
+const stopTimer = () => {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+}
+
+const handleStart = () => {
+  if (store.settings.operations.length === 0) {
+    alert('请至少选择一种运算类型！')
+    return
+  }
+  userInput.value = ''
+  timerDisplay.value = '00:00:00.000'
+  store.startPractice()
+  startTimer()
+}
+
+const handleKeypad = (num: string) => {
+  if (num === 'DEL') {
+    userInput.value = userInput.value.slice(0, -1)
+  } else if (userInput.value.length < 5) {
+    userInput.value += num
+  }
+}
+
+const submitAnswer = () => {
+  if (userInput.value === '') return
+  const answer = parseInt(userInput.value)
+  const currentQ = store.currentQuestion
+
+  if (currentQ && answer !== currentQ.answer) {
+    store.recordWrongQuestion(currentQ, answer)
+  }
+
+  store.submitAnswer(answer)
+  userInput.value = ''
+
+  if (store.status === 'result') {
+    stopTimer()
+  }
+}
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (store.status !== 'practicing') return
+  if (e.key >= '0' && e.key <= '9') handleKeypad(e.key)
+  else if (e.key === 'Backspace') handleKeypad('DEL')
+  else if (e.key === 'Enter') submitAnswer()
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+  // 确保每次进入页面都回到设置界面
+  store.resetToSettings()
+  store.syncHistory()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+  stopTimer()
+})
+
+const toggleOp = (op: MathOp) => {
+  const ops = [...store.settings.operations]
+  const index = ops.indexOf(op)
+  if (index > -1) {
+    if (ops.length > 1) ops.splice(index, 1)
+  } else {
+    ops.push(op)
+  }
+  store.settings.operations = ops
+}
+</script>
+
 <style scoped>
 .practice-container {
   min-height: 100vh;
@@ -488,7 +488,8 @@ select {
 /* 答题区域 */
 .game-area {
   width: 100%;
-  max-width: 600px;
+  max-width: 800px;
+  container-type: inline-size;
 }
 
 .stats-bar {
@@ -503,6 +504,13 @@ select {
   border: 3px solid #db2777;
 }
 
+@container (max-width: 400px) {
+  .stats-bar {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
 .timer {
   color: #db2777;
   font-weight: bold;
@@ -513,6 +521,13 @@ select {
   gap: 15px;
   font-size: 0.9rem;
   color: #64748b;
+}
+
+@container (max-width: 400px) {
+  .progress {
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .question-box {
@@ -552,7 +567,7 @@ select {
 }
 
 .submit-btn {
-  grid-column: span 2;
+  grid-column: span 3;
   background: #db2777 !important;
   color: white;
 }
