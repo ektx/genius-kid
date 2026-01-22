@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useMathStore } from '../../store/mathStore';
-import { mathLevels } from '../../data/mathData';
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMathStore } from '../../store/mathStore'
+import { mathLevels } from '../../data/mathData'
 
-const router = useRouter();
-const mathStore = useMathStore();
+const router = useRouter()
+const mathStore = useMathStore()
 
 onMounted(() => {
-  mathStore.syncProgress();
-});
+  mathStore.syncProgress()
+})
 
 const selectLevel = (levelId: number) => {
   if (mathStore.levelProgress[levelId]?.unlocked) {
-    mathStore.startLevel(levelId);
-    router.push('/math/game');
+    mathStore.startLevel(levelId)
+    router.push('/math/game')
   }
-};
+}
 </script>
 
 <template>
@@ -24,15 +24,13 @@ const selectLevel = (levelId: number) => {
     <div class="header">
       <button class="back-btn" @click="router.push('/')">🏠</button>
       <h1 class="title">🧮 数学大冒险</h1>
-      <button class="practice-entry" @click="router.push('/math/practice')">🎯 自由练习</button>
     </div>
-
     <div class="level-grid">
-      <div 
-        v-for="level in mathLevels" 
+      <div
+        v-for="level in mathLevels"
         :key="level.id"
         class="level-card"
-        :class="{ 
+        :class="{
           locked: !mathStore.levelProgress[level.id]?.unlocked,
           completed: mathStore.levelProgress[level.id]?.stars > 0
         }"
@@ -40,9 +38,22 @@ const selectLevel = (levelId: number) => {
       >
         <div class="level-number">{{ level.id }}</div>
         <div class="stars">
-          <span v-for="s in 3" :key="s" class="star" :class="{ active: s <= (mathStore.levelProgress[level.id]?.stars || 0) }">⭐</span>
+          <span
+            v-for="s in 3"
+            :key="s"
+            class="star"
+            :class="{
+              active: s <= (mathStore.levelProgress[level.id]?.stars || 0)
+            }"
+            >⭐</span
+          >
         </div>
-        <div v-if="!mathStore.levelProgress[level.id]?.unlocked" class="lock-icon">🔒</div>
+        <div
+          v-if="!mathStore.levelProgress[level.id]?.unlocked"
+          class="lock-icon"
+        >
+          🔒
+        </div>
       </div>
     </div>
   </div>
@@ -175,7 +186,11 @@ const selectLevel = (levelId: number) => {
 }
 
 @media (max-width: 600px) {
-  .title { font-size: 2rem; }
-  .level-grid { grid-template-columns: repeat(3, 1fr); }
+  .title {
+    font-size: 2rem;
+  }
+  .level-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 </style>

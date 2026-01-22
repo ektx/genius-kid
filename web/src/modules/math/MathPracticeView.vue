@@ -1,8 +1,8 @@
 <template>
   <div class="practice-container">
     <div class="header">
-      <button class="back-btn" @click="router.push('/math')">🏠</button>
-      <h1 class="title">🧮 数学自由练</h1>
+      <button class="back-btn" @click="router.back()">🏠</button>
+      <h1 class="title">🎯 数学自由练</h1>
     </div>
 
     <!-- 1. 设置区域 -->
