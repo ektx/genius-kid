@@ -17,12 +17,12 @@
         🎯 数学自由练习
       </button>
 
-      <input type="text" v-model="codeInner" />
+      <!-- <input type="text" v-model="codeInner" />
 
       <button class="secondary-btn" @click="generate">生成</button>
 
       <img class="code-img" :src="codeSrc" />
-      <div id="reader"></div>
+      <div id="reader"></div> -->
     </div>
   </div>
 </template>
@@ -60,37 +60,37 @@ function generate() {
 
 generate()
 
-Html5Qrcode.getCameras().then(cameras => {
-  console.log('cameras', cameras)
-  const config = { fps: 10, qrbox: { width: 280, height: 280 } }
-  const html5QrCode = new Html5Qrcode('reader')
+// Html5Qrcode.getCameras().then(cameras => {
+//   console.log('cameras', cameras)
+//   const config = { fps: 10, qrbox: { width: 280, height: 280 } }
+//   const html5QrCode = new Html5Qrcode('reader')
 
-  // 启动扫描
-  html5QrCode
-    .start(
-      { facingMode: 'environment' }, // 后置摄像头
-      config,
-      (decodedText, decodedResult) => {
-        // 成功识别
+//   // 启动扫描
+//   html5QrCode
+//     .start(
+//       { facingMode: 'environment' }, // 后置摄像头
+//       config,
+//       (decodedText, decodedResult) => {
+//         // 成功识别
 
-        // do something when code is read
-        console.log('decodedText', decodedText)
-        console.log('decodedResult', decodedResult)
-        // 可选：识别一次就停止
-        html5QrCode.stop()
+//         // do something when code is read
+//         console.log('decodedText', decodedText)
+//         console.log('decodedResult', decodedResult)
+//         // 可选：识别一次就停止
+//         html5QrCode.stop()
 
-        // 可选：自动跳转
-        // if (decodedText.startsWith("http")) window.location.href = decodedText;
-      },
-      errorMessage => {
-        // 扫描中持续报错（忽略大多数无码情况）
-        // console.log(`扫描中... ${errorMessage}`)
-      }
-    )
-    .catch(err => {
-      alert('启动摄像头失败：' + err)
-    })
-})
+//         // 可选：自动跳转
+//         // if (decodedText.startsWith("http")) window.location.href = decodedText;
+//       },
+//       errorMessage => {
+//         // 扫描中持续报错（忽略大多数无码情况）
+//         // console.log(`扫描中... ${errorMessage}`)
+//       }
+//     )
+//     .catch(err => {
+//       alert('启动摄像头失败：' + err)
+//     })
+// })
 </script>
 <style scoped>
 .user-info {

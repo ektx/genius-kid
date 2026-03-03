@@ -139,16 +139,7 @@
         </div>
       </div>
 
-      <div class="keypad">
-        <div class="keys">
-          <button v-for="n in 9" :key="n" @click="handleKeypad(n.toString())">
-            {{ n }}
-          </button>
-          <button @click="handleKeypad('0')">0</button>
-          <button class="del-btn" @click="handleKeypad('DEL')">退格</button>
-          <button class="submit-btn" @click="submitAnswer">确定</button>
-        </div>
-      </div>
+      <Keypad v-model="userInput" @submit-answer="submitAnswer"></Keypad>
     </div>
 
     <!-- 3. 结算区域 -->
@@ -209,6 +200,7 @@ import type {
   MathType,
   QuestionCount
 } from '../../utils/mathGenerator'
+import Keypad from '@src/components/Keypad/keypadIndex.vue'
 
 const router = useRouter()
 const store = useMathPracticeStore()
@@ -550,20 +542,6 @@ select {
   border-bottom: 4px solid #db2777;
   min-width: 60px;
   display: inline-block;
-}
-
-.keypad .keys {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.keypad button {
-  height: 60px;
-  font-size: 1.5rem;
-  background: white;
-  border: 3px solid #db2777;
-  border-radius: 12px;
 }
 
 .submit-btn {
