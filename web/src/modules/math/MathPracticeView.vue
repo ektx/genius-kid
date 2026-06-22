@@ -192,7 +192,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useMathPracticeStore } from '../../store/mathPracticeStore'
 import type {
   MathOp,
@@ -268,6 +268,19 @@ const handleKeyDown = (e: KeyboardEvent) => {
   else if (e.key === 'Backspace') handleKeypad('DEL')
   else if (e.key === 'Enter') submitAnswer()
 }
+
+// 路由离开时确认
+onBeforeRouteLeave((to, from, next) => {
+  if (from.path === '/math/practice') {
+    if (store.status !== 'practicing') {
+      next()
+    } else {
+      next(confirm('确定要离开当前页面吗？'))
+    }
+  } else {
+    next()
+  }
+})
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
